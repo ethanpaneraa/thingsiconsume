@@ -1,0 +1,24 @@
+name = "consumed-images-worker"
+main = "src/index.ts"
+compatibility_date = "2024-01-01"
+
+# R2 bucket binding
+[[r2_buckets]]
+binding = "R2_BUCKET"
+bucket_name = "consumed-images"
+
+# Route configuration
+# Note: Update account_id and route after deployment
+# Routes are configured in Cloudflare dashboard or via wrangler.toml
+# For custom domain: consumed.ethanpinedaa.dev/images/*
+#
+# To deploy:
+# 1. Set CLOUDFLARE_ACCOUNT_ID in your environment
+# 2. Authenticate: wrangler login
+# 3. Deploy: wrangler deploy
+#
+# After deployment, configure route in Cloudflare dashboard:
+# Workers & Pages > Routes > Add route
+# Pattern: consumed.ethanpinedaa.dev/images/*
+# Worker: consumed-images-worker
+
