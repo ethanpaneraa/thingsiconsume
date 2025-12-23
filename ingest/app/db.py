@@ -5,7 +5,6 @@ from typing import Optional, Dict, Any, List, Tuple
 from datetime import datetime, date
 import uuid
 
-# Connection pool
 _pool: Optional[asyncpg.Pool] = None
 
 

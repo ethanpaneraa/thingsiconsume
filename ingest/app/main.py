@@ -43,10 +43,8 @@ def verify_api_key(x_api_key: Optional[str] = Header(None)) -> str:
 def derive_day(occurred_at: datetime) -> str:
     """Convert occurred_at to America/Los_Angeles timezone and extract day."""
     if occurred_at.tzinfo is None:
-        # Assume UTC if no timezone info
         occurred_at = pytz.utc.localize(occurred_at)
 
-    # Convert to LA timezone
     la_time = occurred_at.astimezone(LA_TZ)
     return la_time.date().isoformat()
 
@@ -75,7 +73,6 @@ async def create_event_endpoint(
     }
     """
     try:
-        # Parse occurred_at
         occurred_at_str = event_data.get("occurred_at")
         if not occurred_at_str:
             raise HTTPException(status_code=400, detail="occurred_at is required")
@@ -83,13 +80,11 @@ async def create_event_endpoint(
         occurred_at = datetime.fromisoformat(occurred_at_str.replace("Z", "+00:00"))
         day = derive_day(occurred_at)
 
-        # Validate required fields
         event_type = event_data.get("type")
         title = event_data.get("title")
         if not event_type or not title:
             raise HTTPException(status_code=400, detail="type and title are required")
 
-        # Create event
         event_id = await create_event(
             occurred_at=occurred_at,
             day=day,
@@ -121,10 +116,8 @@ async def create_event_with_image(
     - file: binary image file
     """
     try:
-        # Parse metadata
         event_data = json.loads(metadata)
 
-        # Parse occurred_at
         occurred_at_str = event_data.get("occurred_at")
         if not occurred_at_str:
             raise HTTPException(status_code=400, detail="occurred_at is required in metadata")
@@ -132,33 +125,26 @@ async def create_event_with_image(
         occurred_at = datetime.fromisoformat(occurred_at_str.replace("Z", "+00:00"))
         day = derive_day(occurred_at)
 
-        # Validate required fields
         event_type = event_data.get("type")
         title = event_data.get("title")
         if not event_type or not title:
             raise HTTPException(status_code=400, detail="type and title are required in metadata")
 
-        # Read and convert image
         image_bytes = await file.read()
         webp_bytes, width, height = convert_to_webp(image_bytes)
 
-        # Generate paths
         event_id = uuid.uuid4()
         media_id = uuid.uuid4()
         year = occurred_at.strftime("%Y")
         month = occurred_at.strftime("%m")
         day_str = occurred_at.strftime("%d")
 
-        # R2 key: images/YYYY/MM/DD/<eventId>/<mediaId>.webp
         r2_key = f"images/{year}/{month}/{day_str}/{event_id}/{media_id}.webp"
 
-        # Upload to R2
         upload_to_r2(r2_key, webp_bytes, "image/webp")
 
-        # Path for response (URL path)
         media_path = f"/images/{year}/{month}/{day_str}/{event_id}/{media_id}.webp"
 
-        # Create event in database
         await create_event(
             occurred_at=occurred_at,
             day=day,
@@ -169,7 +155,6 @@ async def create_event_with_image(
             event_id=event_id
         )
 
-        # Create media record
         await create_media(
             event_id=event_id,
             path=media_path,
