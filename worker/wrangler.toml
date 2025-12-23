@@ -6,6 +6,7 @@ compatibility_date = "2024-01-01"
 [[r2_buckets]]
 binding = "R2_BUCKET"
 bucket_name = "consumed-images"
+preview_bucket_name="consumed-images"
 
 # Route configuration
 # Note: Update account_id and route after deployment

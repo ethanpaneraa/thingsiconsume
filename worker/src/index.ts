@@ -6,39 +6,40 @@ export default {
   ): Promise<Response> {
     const url = new URL(request.url);
 
-    // Only handle /images/* paths
+    // Debug: list some objects to see what bucket this binding points at
+    if (url.pathname === "/debug-list") {
+      const list = await env.R2_BUCKET.list({
+        prefix: "images/2025/12/22",
+        limit: 20,
+      });
+      const keys = list.objects.map((o) => o.key);
+      console.log("R2 list result:", keys);
+      return new Response(JSON.stringify(keys, null, 2), {
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
     if (!url.pathname.startsWith("/images/")) {
       return new Response("Not found", { status: 404 });
     }
 
-    // Extract R2 key (remove leading /images/)
-    const key = url.pathname.slice(1); // "images/2025/12/22/..."
+    const key = url.pathname.slice(1);
+    console.log("Fetching key from R2:", key);
 
     try {
-      // Fetch object from R2
       const obj = await env.R2_BUCKET.get(key);
-
       if (!obj) {
+        console.log("R2 object not found for key:", key);
         return new Response("Not found", { status: 404 });
       }
 
-      // Prepare headers
       const headers = new Headers();
-
-      // Set Content-Type from R2 metadata or default
       const contentType =
         obj.httpMetadata?.contentType || "application/octet-stream";
       headers.set("Content-Type", contentType);
-
-      // Set cache headers (images are immutable)
       headers.set("Cache-Control", "public, max-age=31536000, immutable");
+      if (obj.httpEtag) headers.set("ETag", obj.httpEtag);
 
-      // Optional: Set ETag if available
-      if (obj.httpEtag) {
-        headers.set("ETag", obj.httpEtag);
-      }
-
-      // Return the object body with headers
       return new Response(obj.body, { headers });
     } catch (error) {
       console.error("Error fetching from R2:", error);

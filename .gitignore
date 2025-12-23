@@ -22,7 +22,7 @@ Thumbs.db
 
 site/docs/
 *.log
-
+worker/.wrangler/
 node_modules/
 auth.html
 generate_token.py

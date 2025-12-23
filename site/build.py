@@ -22,6 +22,12 @@ database_url = os.getenv("POSTGRES_URL") or os.getenv("DATABASE_URL")
 if not database_url:
     raise ValueError("POSTGRES_URL or DATABASE_URL environment variable not set")
 
+# Base URL for images (so we can point to Cloudflare Worker or local dev worker)
+# Examples:
+# - For production: https://consumed.yourdomain.com
+# - For local worker dev: http://127.0.0.1:8787
+image_base_url = os.getenv("IMAGE_BASE_URL", "").rstrip("/")
+
 
 async def fetch_events():
     """Fetch all events with media from database."""
@@ -135,7 +141,13 @@ def render_html(days):
             if etype in ["meal", "photo"] and event["media"]:
                 parts.append('                    <div class="event-media">')
                 for media in event["media"]:
-                    src = escape(media["path"])
+                    raw_path = media["path"] or ""
+                    # If IMAGE_BASE_URL is set, prefix it; otherwise keep the original path
+                    if image_base_url:
+                        full_url = f"{image_base_url}/{raw_path.lstrip('/')}"
+                    else:
+                        full_url = raw_path
+                    src = escape(full_url)
                     width = media["width"]
                     height = media["height"]
                     attrs = [f'src="{src}"', f'alt="{title}"', 'loading="lazy"']
