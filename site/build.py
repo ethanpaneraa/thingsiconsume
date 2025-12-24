@@ -150,6 +150,23 @@ def group_events_by_day(events):
     return result
 
 
+def format_day_label(day_str):
+    """Format day string like 'tuesday, november 18th'."""
+    try:
+        dt = datetime.strptime(day_str, "%Y-%m-%d")
+        day_name = dt.strftime("%A").lower()
+        month_name = dt.strftime("%B").lower()
+        day_num = dt.day
+        # Add ordinal suffix
+        if 10 <= day_num % 100 <= 20:
+            suffix = 'th'
+        else:
+            suffix = {1: 'st', 2: 'nd', 3: 'rd'}.get(day_num % 10, 'th')
+        return f"{day_name}, {month_name} {day_num}{suffix}"
+    except:
+        return day_str
+
+
 def render_html(days):
     """Render full HTML page as a string (no templates)."""
     parts = []
@@ -158,113 +175,131 @@ def render_html(days):
     parts.append("<head>")
     parts.append('    <meta charset="UTF-8">')
     parts.append('    <meta name="viewport" content="width=device-width, initial-scale=1.0">')
-    parts.append("    <title>Consumed</title>")
+    parts.append("    <title>consumed</title>")
     parts.append('    <link rel="stylesheet" href="assets/site.css">')
     parts.append("</head>")
     parts.append("<body>")
     parts.append("    <header>")
-    parts.append("        <h1>Consumed</h1>")
-    parts.append('        <p class="subtitle">A log of things consumed</p>')
+    parts.append("        <h1>consumed</h1>")
+    parts.append('        <p class="subtitle">a daily digest of the food (+ media) that make up my diet :0)</p>')
     parts.append("    </header>")
     parts.append("")
     parts.append("    <main>")
 
-    for day_group in days:
-        day_label = escape(day_group["day"])
+    for idx, day_group in enumerate(days):
+        day_label = format_day_label(day_group["day"])
+
         parts.append('        <section class="day-section">')
-        parts.append(f'            <h2 class="day-header">{day_label}</h2>')
-        parts.append('            <div class="events-container">')
+        # All days closed by default
+        parts.append('            <details class="day-details">')
+        parts.append(f'                <summary class="day-header">{escape(day_label)}</summary>')
+        parts.append('                <div class="day-content">')
+
+        categories = {
+            "physical": [],
+            "audio": [],
+            "video": [],
+            "text": []
+        }
 
         for event in day_group["events"]:
-            etype = escape(event["type"])
-            title = escape(event["title"])
-            url = event["url"]
-            payload = event["payload"] or {}
-            occurred_at = event["occurred_at"]
-
-            parts.append(f'                <article class="event event-{etype}">')
-
-            if etype in ["meal", "photo"] and event["media"]:
-                parts.append('                    <div class="event-media">')
-                for media in event["media"]:
-                    raw_path = media["path"] or ""
-                    # If IMAGE_BASE_URL is set, prefix it; otherwise keep the original path
-                    if image_base_url:
-                        full_url = f"{image_base_url}/{raw_path.lstrip('/')}"
-                    else:
-                        full_url = raw_path
-                    src = escape(full_url)
-                    width = media["width"]
-                    height = media["height"]
-                    attrs = [f'src="{src}"', f'alt="{title}"', 'loading="lazy"']
-                    if width and height:
-                        attrs.append(f'width="{width}"')
-                        attrs.append(f'height="{height}"')
-                    parts.append(f'                        <img {" ".join(attrs)}>')  # noqa: E501
-                parts.append("                    </div>")
-                parts.append(f'                    <h3 class="event-title">{title}</h3>')
-
-            elif etype == "link":
-                parts.append('                    <h3 class="event-title">')
-                if url:
-                    safe_url = escape(url)
-                    parts.append(
-                        f'                        <a href="{safe_url}" target="_blank" rel="noopener noreferrer">{title}</a>'
-                    )
-                else:
-                    parts.append(f"                        {title}")
-                parts.append("                    </h3>")
-                if url:
-                    parts.append(f'                    <p class="event-url">{escape(url)}</p>')
-
-            elif etype == "video":
-                parts.append(f'                    <h3 class="event-title">{title}</h3>')
-                if url:
-                    safe_url = escape(url)
-                    parts.append("                    <p class=\"event-url\">")
-                    parts.append(
-                        f'                        <a href="{safe_url}" target="_blank" rel="noopener noreferrer">{safe_url}</a>'
-                    )
-                    parts.append("                    </p>")
-
+            etype = event["type"]
+            if etype in ["meal", "photo"]:
+                categories["physical"].append(event)
             elif etype == "music":
-                artist = payload.get("artist", "")
-                if artist:
-                    display_title = f"{title} - {escape(str(artist))}"
+                categories["audio"].append(event)
+            elif etype == "video":
+                categories["video"].append(event)
+            else:  # link, note, place, etc.
+                categories["text"].append(event)
+
+        # Render each category
+        for category_name, category_events in categories.items():
+            if not category_events:
+                continue
+
+            parts.append('                    <div class="category-section">')
+            # All category dropdowns closed by default
+            parts.append('                        <details class="category-details">')
+            parts.append(f'                            <summary class="category-header">{category_name}</summary>')
+            parts.append('                            <ul class="events-list">')
+
+            for event in category_events:
+                etype = event["type"]
+                title = escape(event["title"]).lower()
+                url = event["url"]
+                payload = event["payload"] or {}
+
+                parts.append('                                <li class="event-item">')
+                if etype in ["meal", "photo"] and event["media"]:
+                    parts.append('                                    <div class="event-media">')
+                    for media in event["media"]:
+                        raw_path = media["path"] or ""
+                        if image_base_url:
+                            full_url = f"{image_base_url}/{raw_path.lstrip('/')}"
+                        else:
+                            full_url = raw_path
+                        src = escape(full_url)
+                        width = media["width"]
+                        height = media["height"]
+                        attrs = [f'src="{src}"', f'alt="{title}"', 'loading="lazy"']
+                        if width and height:
+                            attrs.append(f'width="{width}"')
+                            attrs.append(f'height="{height}"')
+                        parts.append(f'                                        <img {" ".join(attrs)}>')
+                    parts.append("                                    </div>")
+                    # Don't show title/caption for images
+
+                elif etype == "music":
+                    artist = escape(str(payload.get("artist", ""))).lower()
+                    # Just show text, no links
+                    if artist:
+                        parts.append(f'                                    {title} - {artist}')
+                    else:
+                        parts.append(f'                                    {title}')
+
+                elif etype == "video":
+                    if url:
+                        safe_url = escape(url)
+                        parts.append(f'                                    <a href="{safe_url}" target="_blank" rel="noopener noreferrer">{title}</a>')
+                    else:
+                        parts.append(f'                                    {title}')
+
+                elif etype == "link":
+                    if url:
+                        safe_url = escape(url)
+                        parts.append(f'                                    <a href="{safe_url}" target="_blank" rel="noopener noreferrer">{title}</a>')
+                    else:
+                        parts.append(f'                                    {title}')
+
+                elif etype == "place":
+                    parts.append(f'                                    {title}')
+                    address = escape(str(payload.get("address", ""))).lower()
+                    if address:
+                        parts.append(f' - {address}')
+
+                elif etype == "note":
+                    parts.append(f'                                    {title}')
+                    text = escape(str(payload.get("text", ""))).lower()
+                    if text:
+                        parts.append(f' - {text}')
+
                 else:
-                    display_title = title
-                parts.append(f'                    <h3 class="event-title">{display_title}</h3>')
+                    parts.append(f'                                    {title}')
 
-            elif etype == "place":
-                parts.append(f'                    <h3 class="event-title">{title}</h3>')
-                address = payload.get("address")
-                if address:
-                    parts.append(f'                    <p class="event-address">{escape(str(address))}</p>')
+                parts.append("                                </li>")
 
-            elif etype == "note":
-                parts.append(f'                    <h3 class="event-title">{title}</h3>')
-                text = payload.get("text")
-                if text:
-                    parts.append(f'                    <p class="event-text">{escape(str(text))}</p>')
+            parts.append("                            </ul>")
+            parts.append("                        </details>")
+            parts.append("                    </div>")
 
-            else:
-                parts.append(f'                    <h3 class="event-title">{title}</h3>')
-
-            # Time
-            if occurred_at:
-                safe_dt = escape(occurred_at)
-                display = escape(occurred_at[:16])
-                parts.append(f'                    <time class="event-time" datetime="{safe_dt}">{display}</time>')
-
-            parts.append("                </article>")
-
-        parts.append("            </div>")
+        parts.append("                </div>")
+        parts.append("            </details>")
         parts.append("        </section>")
 
     parts.append("    </main>")
     parts.append("")
     parts.append("    <footer>")
-    parts.append(f"        <p>Last updated: {escape(datetime.now().isoformat())}</p>")
     parts.append("    </footer>")
     parts.append("</body>")
     parts.append("</html>")
@@ -319,5 +354,6 @@ async def main():
 
 if __name__ == "__main__":
     import asyncio
-    asyncio.run(main())
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(main())
 
