@@ -287,18 +287,15 @@ async def main():
     all_items = events + songs
     print(f"Total items: {len(all_items)}")
 
-    # Group by day
     days = group_events_by_day(all_items)
     print(f"Grouped into {len(days)} days")
 
-    # Prepare output directories
     output_dir = Path(__file__).parent / "docs"
     output_dir.mkdir(exist_ok=True)
 
     assets_dir = output_dir / "assets"
     assets_dir.mkdir(exist_ok=True)
 
-    # Copy CSS
     css_source = Path(__file__).parent / "assets" / "site.css"
     css_dest = assets_dir / "site.css"
     if css_source.exists():
@@ -306,14 +303,16 @@ async def main():
         shutil.copy2(css_source, css_dest)
         print(f"Copied CSS to {css_dest}")
 
-    # Render HTML
     print("Rendering HTML...")
     html_content = render_html(days)
 
-    # Write HTML
     output_file = output_dir / "index.html"
     output_file.write_text(html_content, encoding="utf-8")
     print(f"Generated {output_file}")
+
+    cname_file = output_dir / "CNAME"
+    cname_file.write_text("consumed.ethanpinedaa.dev\n", encoding="utf-8")
+    print(f"Generated {cname_file}")
 
     print("Build complete!")
 
