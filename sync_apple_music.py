@@ -11,7 +11,6 @@ from app.apple_music import AppleMusicClient
 from app.db import (
     get_db_connection,
     create_song,
-    get_latest_song_timestamp,
     close_pool
 )
 import pytz
