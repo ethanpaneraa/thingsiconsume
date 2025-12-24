@@ -320,15 +320,5 @@ async def main():
 
 if __name__ == "__main__":
     import asyncio
-    import sys
-
-    # Python 3.6 compatibility
-    if sys.version_info >= (3, 7):
-        asyncio.run(main())
-    else:
-        loop = asyncio.get_event_loop()
-        try:
-            loop.run_until_complete(main())
-        finally:
-            loop.close()
+    asyncio.run(main())
 
