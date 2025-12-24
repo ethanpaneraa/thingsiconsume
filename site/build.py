@@ -204,7 +204,13 @@ def render_html(days):
 
             for event in category_events:
                 etype = event["type"]
-                title = escape(event["title"]).lower()
+                raw_title = event["title"]
+                if etype == "place":
+                    import re
+                    raw_title = re.sub(r'^(map item\s+)?apple maps\s+', '', raw_title, flags=re.IGNORECASE)
+                    raw_title = re.sub(r'^map item\s+', '', raw_title, flags=re.IGNORECASE)
+                    raw_title = raw_title.strip()
+                title = escape(raw_title).lower()
                 url = event["url"]
                 payload = event["payload"] if isinstance(event["payload"], dict) else {}
 
