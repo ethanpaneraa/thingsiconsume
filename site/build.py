@@ -159,7 +159,7 @@ def render_html(days):
     parts.append('    <meta charset="UTF-8">')
     parts.append('    <meta name="viewport" content="width=device-width, initial-scale=1.0">')
     parts.append("    <title>Consumed</title>")
-    parts.append('    <link rel="stylesheet" href="/assets/site.css">')
+    parts.append('    <link rel="stylesheet" href="assets/site.css">')
     parts.append("</head>")
     parts.append("<body>")
     parts.append("    <header>")

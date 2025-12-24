@@ -6,16 +6,14 @@ export default {
   ): Promise<Response> {
     const url = new URL(request.url);
 
-    // Debug: list some objects to see what bucket this binding points at
-    if (url.pathname === "/debug-list") {
-      const list = await env.R2_BUCKET.list({
-        prefix: "images/2025/12/22",
-        limit: 20,
-      });
-      const keys = list.objects.map((o) => o.key);
-      console.log("R2 list result:", keys);
-      return new Response(JSON.stringify(keys, null, 2), {
-        headers: { "Content-Type": "application/json" },
+    if (request.method === "OPTIONS") {
+      return new Response(null, {
+        headers: {
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Methods": "GET, HEAD, OPTIONS",
+          "Access-Control-Allow-Headers": "Content-Type",
+          "Access-Control-Max-Age": "86400",
+        },
       });
     }
 
@@ -39,6 +37,9 @@ export default {
       headers.set("Content-Type", contentType);
       headers.set("Cache-Control", "public, max-age=31536000, immutable");
       if (obj.httpEtag) headers.set("ETag", obj.httpEtag);
+      headers.set("Access-Control-Allow-Origin", "*");
+      headers.set("Access-Control-Allow-Methods", "GET, HEAD, OPTIONS");
+      headers.set("Access-Control-Allow-Headers", "Content-Type");
 
       return new Response(obj.body, { headers });
     } catch (error) {
