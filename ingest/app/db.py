@@ -125,16 +125,25 @@ async def create_song(
         release_date_obj = date.fromisoformat(release_date)
 
     async with pool.acquire() as conn:
-        # Check if song already exists (by played_at, title, artist to avoid duplicates)
-        existing = await conn.fetchrow(
-            """
-            SELECT id FROM consumed_songs
-            WHERE played_at = $1 AND title = $2 AND artist = $3
-            """,
-            played_at,
-            title,
-            artist
-        )
+        if apple_music_id:
+            existing = await conn.fetchrow(
+                """
+                SELECT id FROM consumed_songs
+                WHERE apple_music_id = $1 AND day = $2
+                """,
+                apple_music_id,
+                date.fromisoformat(day)
+            )
+        else:
+            existing = await conn.fetchrow(
+                """
+                SELECT id FROM consumed_songs
+                WHERE played_at = $1 AND title = $2 AND artist = $3
+                """,
+                played_at,
+                title,
+                artist
+            )
 
         if existing:
             return existing["id"], False

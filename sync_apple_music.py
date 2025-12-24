@@ -83,19 +83,19 @@ async def sync_songs():
                 )
                 if was_inserted:
                     new_songs_count += 1
-                    print(f"  ✓ {song_data['title']} - {song_data['artist']}")
+                    print(f"  ✓ Added: {song_data['title']} - {song_data['artist']}")
                 else:
                     duplicate_count += 1
             except Exception as e:
-                print(f"  ✗ Error adding song: {e}")
+                print(f"  ✗ Error: {song_data.get('title', 'Unknown')} - {str(e)[:100]}")
                 skipped_count += 1
 
         print("\n" + "="*60)
         print(f"Sync complete!")
-        print(f"  New songs added: {new_songs_count}")
-        print(f"  Already in DB: {duplicate_count}")
+        print(f"  New songs: {new_songs_count}")
+        print(f"  Duplicates: {duplicate_count}")
         print(f"  Errors: {skipped_count}")
-        print(f"  Total from API: {len(songs)}")
+        print(f"  Total: {len(songs)}")
         print("="*60)
 
         return new_songs_count
