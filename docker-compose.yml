@@ -1,0 +1,55 @@
+version: "3.8"
+
+services:
+  # FastAPI ingest service
+  ingest:
+    build:
+      context: ./ingest
+      dockerfile: Dockerfile
+    container_name: whaticonsumed-ingest
+    ports:
+      - "${INGEST_PORT:-8000}:8000"
+    environment:
+      # Database
+      - POSTGRES_URL=${POSTGRES_URL}
+      - DATABASE_URL=${DATABASE_URL}
+
+      # API Authentication
+      - INGEST_API_KEY=${INGEST_API_KEY}
+
+      # AWS/R2 Configuration (for Cloudflare R2 via S3 API)
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - R2_ACCOUNT_ID=${R2_ACCOUNT_ID}
+      - R2_BUCKET_NAME=${R2_BUCKET_NAME}
+
+      # Port (Railway compatibility)
+      - PORT=${PORT:-8000}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Site builder (runs once to generate static site)
+  site-builder:
+    build:
+      context: ./site
+      dockerfile: Dockerfile
+    container_name: whaticonsumed-site-builder
+    environment:
+      # Database
+      - POSTGRES_URL=${POSTGRES_URL}
+      - DATABASE_URL=${DATABASE_URL}
+
+      # Image base URL (for Cloudflare Worker)
+      - IMAGE_BASE_URL=${IMAGE_BASE_URL}
+    volumes:
+      # Mount the output directory to persist generated site
+      - ./site/docs:/app/docs
+    profiles:
+      - build
+    # This service runs once and exits
+    # To build the site: docker-compose --profile build run site-builder

@@ -45,32 +45,13 @@ async def sync_songs():
         print("Connecting to database...")
         await get_db_connection()
 
-        latest_timestamp = await get_latest_song_timestamp()
-        if latest_timestamp:
-            print(f"Latest song in database: {latest_timestamp.isoformat()}")
-        else:
-            print("No songs in database yet - this is the first sync")
-
         print("Fetching songs from Apple Music...")
-        import requests
-        DEV = os.environ["APPLE_DEVELOPER_TOKEN"].strip()
-        USER = os.environ["APPLE_MUSIC_USER_TOKEN"].strip()
-
-        r = requests.get(
-            "https://api.music.apple.com/v1/me/recent/played/tracks",
-            params={"limit": 30},
-            headers={"Authorization": f"Bearer {DEV}", "Music-User-Token": USER},
-        )
-        print("Direct status:", r.status_code)
-        print("Direct body:", r.text)
-        print("Response headers:", dict(r.headers))
-        r.raise_for_status()
-
         songs = client.get_recently_played(limit=30)
 
         print(f"Found {len(songs)} songs to process")
 
         new_songs_count = 0
+        duplicate_count = 0
         skipped_count = 0
 
         for song_data in songs:
@@ -87,7 +68,7 @@ async def sync_songs():
             day = derive_day(played_at)
 
             try:
-                await create_song(
+                _, was_inserted = await create_song(
                     played_at=played_at,
                     day=day,
                     title=song_data["title"],
@@ -96,22 +77,25 @@ async def sync_songs():
                     apple_music_id=song_data.get("apple_music_id"),
                     isrc=song_data.get("isrc"),
                     duration_ms=song_data.get("duration_ms"),
-                    genre=song_data.get("genre"),
                     release_date=song_data.get("release_date"),
                     apple_music_url=song_data.get("apple_music_url"),
                     artwork_url=song_data.get("artwork_url"),
                     payload=song_data.get("payload", {})
                 )
-                new_songs_count += 1
-                print(f"  ✓ {song_data['title']} - {song_data['artist']}")
+                if was_inserted:
+                    new_songs_count += 1
+                    print(f"  ✓ {song_data['title']} - {song_data['artist']}")
+                else:
+                    duplicate_count += 1
             except Exception as e:
                 print(f"  ✗ Error adding song: {e}")
                 skipped_count += 1
 
         print("\n" + "="*60)
         print(f"Sync complete!")
-        print(f"  Songs processed: {new_songs_count}")
-        print(f"  Songs skipped: {skipped_count}")
+        print(f"  New songs added: {new_songs_count}")
+        print(f"  Already in DB: {duplicate_count}")
+        print(f"  Errors: {skipped_count}")
         print(f"  Total from API: {len(songs)}")
         print("="*60)
 
