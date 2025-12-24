@@ -87,6 +87,52 @@ async def fetch_events():
         await conn.close()
 
 
+async def fetch_songs():
+    """Fetch all songs from database."""
+    conn = await asyncpg.connect(database_url)
+
+    try:
+        rows = await conn.fetch(
+            """
+            SELECT
+                id,
+                played_at,
+                day,
+                title,
+                artist,
+                album,
+                apple_music_url,
+                artwork_url,
+                duration_ms
+            FROM consumed_songs
+            ORDER BY day DESC, played_at DESC
+            """
+        )
+
+        songs = []
+        for row in rows:
+            songs.append({
+                "id": str(row["id"]),
+                "occurred_at": row["played_at"].isoformat() if row["played_at"] else "",
+                "day": row["day"].isoformat() if row["day"] else "",
+                "type": "music",
+                "title": row["title"] or "",
+                "url": row["apple_music_url"] or "",
+                "payload": {
+                    "artist": row["artist"] or "",
+                    "album": row["album"] or "",
+                    "artwork_url": row["artwork_url"] or "",
+                    "duration_ms": row["duration_ms"],
+                },
+                "media": [],
+            })
+
+        return songs
+
+    finally:
+        await conn.close()
+
+
 def group_events_by_day(events):
     """Group events by day."""
     day_groups = defaultdict(list)
@@ -182,17 +228,28 @@ def render_html(days):
                     parts.append("                    </p>")
 
             elif etype == "music":
+                # Show artwork if available
+                artwork_url = payload.get("artwork_url")
+                if artwork_url:
+                    parts.append('                    <div class="event-media">')
+                    safe_artwork = escape(str(artwork_url))
+                    parts.append(f'                        <img src="{safe_artwork}" alt="{title}" loading="lazy" width="200" height="200">')
+                    parts.append("                    </div>")
+                
                 parts.append(f'                    <h3 class="event-title">{title}</h3>')
+                artist = payload.get("artist")
+                if artist:
+                    parts.append(f'                    <p class="event-artist">by {escape(str(artist))}</p>')
+                album = payload.get("album")
+                if album:
+                    parts.append(f'                    <p class="event-album">{escape(str(album))}</p>')
                 if url:
                     safe_url = escape(url)
                     parts.append("                    <p class=\"event-url\">")
                     parts.append(
-                        f'                        <a href="{safe_url}" target="_blank" rel="noopener noreferrer">Listen</a>'
+                        f'                        <a href="{safe_url}" target="_blank" rel="noopener noreferrer">Listen on Apple Music</a>'
                     )
                     parts.append("                    </p>")
-                artist = payload.get("artist")
-                if artist:
-                    parts.append(f'                    <p class="event-artist">{escape(str(artist))}</p>')
 
             elif etype == "place":
                 parts.append(f'                    <h3 class="event-title">{title}</h3>')
@@ -233,13 +290,21 @@ def render_html(days):
 
 async def main():
     """Main build function."""
-    # Fetch events
+    # Fetch events and songs
     print("Fetching events from database...")
     events = await fetch_events()
     print(f"Found {len(events)} events")
+    
+    print("Fetching songs from database...")
+    songs = await fetch_songs()
+    print(f"Found {len(songs)} songs")
+    
+    # Combine events and songs
+    all_items = events + songs
+    print(f"Total items: {len(all_items)}")
 
     # Group by day
-    days = group_events_by_day(events)
+    days = group_events_by_day(all_items)
     print(f"Grouped into {len(days)} days")
 
     # Prepare output directories
