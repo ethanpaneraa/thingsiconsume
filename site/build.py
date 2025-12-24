@@ -1,6 +1,3 @@
-"""
-Build script to generate index.html from Postgres database (no templating engine).
-"""
 import os
 import sys
 from pathlib import Path
@@ -11,21 +8,14 @@ from html import escape
 from dotenv import load_dotenv
 import asyncpg
 
-# Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-# Load environment variables
 load_dotenv()
 
-# Get database URL
 database_url = os.getenv("POSTGRES_URL") or os.getenv("DATABASE_URL")
 if not database_url:
     raise ValueError("POSTGRES_URL or DATABASE_URL environment variable not set")
 
-# Base URL for images (so we can point to Cloudflare Worker or local dev worker)
-# Examples:
-# - For production: https://consumed.yourdomain.com
-# - For local worker dev: http://127.0.0.1:8787
 image_base_url = os.getenv("IMAGE_BASE_URL", "").rstrip("/")
 
 
@@ -54,7 +44,6 @@ async def fetch_events():
             """
         )
 
-        # Group by event (since one event can have multiple media)
         events_dict = {}
         for row in rows:
             event_id = str(row["event_id"])
@@ -70,7 +59,6 @@ async def fetch_events():
                     "media": [],
                 }
 
-            # Add media if it exists
             if row["media_id"]:
                 events_dict[event_id]["media"].append(
                     {
@@ -141,7 +129,6 @@ def group_events_by_day(events):
         day = event["day"]
         day_groups[day].append(event)
 
-    # Convert to list of dicts, sorted by day DESC
     result = [
         {"day": day, "events": events}
         for day, events in sorted(day_groups.items(), reverse=True)
@@ -157,7 +144,6 @@ def format_day_label(day_str):
         day_name = dt.strftime("%A").lower()
         month_name = dt.strftime("%B").lower()
         day_num = dt.day
-        # Add ordinal suffix
         if 10 <= day_num % 100 <= 20:
             suffix = 'th'
         else:
@@ -179,21 +165,14 @@ def render_html(days):
     parts.append('    <link rel="stylesheet" href="assets/site.css">')
     parts.append("</head>")
     parts.append("<body>")
-    parts.append("    <header>")
-    parts.append("        <h1>consumed</h1>")
+    parts.append('    <div class="center">')
+    parts.append('        <h1 class="title">consumed</h1>')
     parts.append('        <p class="subtitle">a daily digest of the food (+ media) that make up my diet :0)</p>')
-    parts.append("    </header>")
-    parts.append("")
-    parts.append("    <main>")
 
     for idx, day_group in enumerate(days):
         day_label = format_day_label(day_group["day"])
-
-        parts.append('        <section class="day-section">')
-        # All days closed by default
-        parts.append('            <details class="day-details">')
-        parts.append(f'                <summary class="day-header">{escape(day_label)}</summary>')
-        parts.append('                <div class="day-content">')
+        parts.append('        <details class="day">')
+        parts.append(f'            <summary class="date">{escape(day_label)}</summary>')
 
         categories = {
             "physical": [],
@@ -210,19 +189,15 @@ def render_html(days):
                 categories["audio"].append(event)
             elif etype == "video":
                 categories["video"].append(event)
-            else:  # link, note, place, etc.
+            else:
                 categories["text"].append(event)
 
-        # Render each category
         for category_name, category_events in categories.items():
             if not category_events:
                 continue
 
-            parts.append('                    <div class="category-section">')
-            # All category dropdowns closed by default
-            parts.append('                        <details class="category-details">')
-            parts.append(f'                            <summary class="category-header">{category_name}</summary>')
-            parts.append('                            <ul class="events-list">')
+            parts.append('            <details>')
+            parts.append(f'                <summary>{category_name}</summary>')
 
             for event in category_events:
                 etype = event["type"]
@@ -230,9 +205,7 @@ def render_html(days):
                 url = event["url"]
                 payload = event["payload"] or {}
 
-                parts.append('                                <li class="event-item">')
                 if etype in ["meal", "photo"] and event["media"]:
-                    parts.append('                                    <div class="event-media">')
                     for media in event["media"]:
                         raw_path = media["path"] or ""
                         if image_base_url:
@@ -240,64 +213,51 @@ def render_html(days):
                         else:
                             full_url = raw_path
                         src = escape(full_url)
-                        width = media["width"]
-                        height = media["height"]
-                        attrs = [f'src="{src}"', f'alt="{title}"', 'loading="lazy"']
-                        if width and height:
-                            attrs.append(f'width="{width}"')
-                            attrs.append(f'height="{height}"')
-                        parts.append(f'                                        <img {" ".join(attrs)}>')
-                    parts.append("                                    </div>")
-                    # Don't show title/caption for images
+                        parts.append(f'                <img loading="lazy" src="{src}">')
 
                 elif etype == "music":
                     artist = escape(str(payload.get("artist", ""))).lower()
-                    # Just show text, no links
                     if artist:
-                        parts.append(f'                                    {title} - {artist}')
+                        parts.append(f'                {title} - {artist}<br>')
                     else:
-                        parts.append(f'                                    {title}')
+                        parts.append(f'                {title}<br>')
 
                 elif etype == "video":
                     if url:
                         safe_url = escape(url)
-                        parts.append(f'                                    <a href="{safe_url}" target="_blank" rel="noopener noreferrer">{title}</a>')
+                        parts.append(f'                <a href="{safe_url}">{title}</a><br>')
                     else:
-                        parts.append(f'                                    {title}')
+                        parts.append(f'                {title}<br>')
 
                 elif etype == "link":
                     if url:
                         safe_url = escape(url)
-                        parts.append(f'                                    <a href="{safe_url}" target="_blank" rel="noopener noreferrer">{title}</a>')
+                        parts.append(f'                <a href="{safe_url}">{title}</a><br>')
                     else:
-                        parts.append(f'                                    {title}')
+                        parts.append(f'                {title}<br>')
 
                 elif etype == "place":
-                    parts.append(f'                                    {title}')
                     address = escape(str(payload.get("address", ""))).lower()
                     if address:
-                        parts.append(f' - {address}')
+                        parts.append(f'                {title} - {address}<br>')
+                    else:
+                        parts.append(f'                {title}<br>')
 
                 elif etype == "note":
-                    parts.append(f'                                    {title}')
                     text = escape(str(payload.get("text", ""))).lower()
                     if text:
-                        parts.append(f' - {text}')
+                        parts.append(f'                {title} - {text}<br>')
+                    else:
+                        parts.append(f'                {title}<br>')
 
                 else:
-                    parts.append(f'                                    {title}')
+                    parts.append(f'                {title}<br>')
 
-                parts.append("                                </li>")
+            parts.append("            </details>")
 
-            parts.append("                            </ul>")
-            parts.append("                        </details>")
-            parts.append("                    </div>")
+        parts.append("        </details>")
 
-        parts.append("                </div>")
-        parts.append("            </details>")
-        parts.append("        </section>")
-
-    parts.append("    </main>")
+    parts.append("    </div>")
     parts.append("")
     parts.append("    <footer>")
     parts.append("    </footer>")
