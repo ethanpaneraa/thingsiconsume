@@ -1,7 +1,8 @@
 import os
 import requests
 from typing import List, Dict, Optional
-from datetime import datetime
+from datetime import datetime, timedelta
+import pytz
 
 
 class AppleMusicClient:
@@ -31,7 +32,8 @@ class AppleMusicClient:
             limit: Maximum number of songs to fetch (default: 30)
 
         Returns:
-            List of song dictionaries with standardized fields
+            List of song dictionaries with standardized fields.
+            Songs are ordered from newest (position 0) to oldest.
         """
         url = f"{self.base_url}/me/recent/played/tracks"
         params = {"limit": limit}
@@ -42,8 +44,8 @@ class AppleMusicClient:
             data = response.json()
 
             songs = []
-            for item in data.get("data", []):
-                song = self._parse_song(item)
+            for position, item in enumerate(data.get("data", [])):
+                song = self._parse_song(item, position)
                 if song:
                     songs.append(song)
 
@@ -56,12 +58,13 @@ class AppleMusicClient:
                 print(f"Response body: {e.response.text}")
             raise
 
-    def _parse_song(self, item: Dict) -> Optional[Dict]:
+    def _parse_song(self, item: Dict, position: int) -> Optional[Dict]:
         """
         Parse a song item from Apple Music API response.
 
         Args:
             item: Raw song data from API
+            position: Position in API response (0 = most recent)
 
         Returns:
             Standardized song dictionary or None if parsing fails
@@ -69,7 +72,6 @@ class AppleMusicClient:
         try:
             attributes = item.get("attributes", {})
 
-            # Extract basic info
             title = attributes.get("name")
             artist = attributes.get("artistName")
             album = attributes.get("albumName")
@@ -77,39 +79,24 @@ class AppleMusicClient:
             if not title or not artist:
                 return None
 
-            # Extract IDs
             apple_music_id = item.get("id")
             isrc = attributes.get("isrc")
 
-            # Extract metadata
             duration_ms = attributes.get("durationInMillis")
             release_date = attributes.get("releaseDate")
 
-            # Extract URLs
             apple_music_url = attributes.get("url")
 
-            # Extract artwork
             artwork = attributes.get("artwork", {})
             artwork_url = None
             if artwork:
-                # Apple Music artwork URLs use a template format
                 url_template = artwork.get("url")
                 if url_template:
-                    # Replace template variables with desired dimensions
                     width = artwork.get("width", 600)
                     height = artwork.get("height", 600)
                     artwork_url = url_template.replace("{w}", str(width)).replace("{h}", str(height))
 
-            # Extract play date
             played_at = None
-            play_params = item.get("attributes", {}).get("playParams", {})
-            # Note: Apple Music API doesn't always provide exact play timestamp in recent history
-            # We'll use current time as fallback
-            played_at_str = attributes.get("lastPlayedDate")
-            if played_at_str:
-                played_at = played_at_str
-            else:
-                played_at = datetime.utcnow().isoformat() + "Z"
 
             return {
                 "title": title,
@@ -122,10 +109,10 @@ class AppleMusicClient:
                 "apple_music_url": apple_music_url,
                 "artwork_url": artwork_url,
                 "played_at": played_at,
-                "payload": item  # Store full API response for reference
+                "position": position,
+                "payload": item
             }
 
         except Exception as e:
             print(f"Error parsing song: {e}")
             return None
-

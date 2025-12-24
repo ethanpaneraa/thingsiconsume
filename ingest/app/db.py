@@ -2,7 +2,7 @@ import os
 import json
 import asyncpg
 from typing import Optional, Dict, Any, List, Tuple
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 import uuid
 
 _pool: Optional[asyncpg.Pool] = None
@@ -125,14 +125,20 @@ async def create_song(
         release_date_obj = date.fromisoformat(release_date)
 
     async with pool.acquire() as conn:
+        # Check for duplicates within a 10-minute window of the played_at time
+        # This prevents re-adding the same song during rapid syncs
+        # but allows the same song to be tracked if played at different times
         if apple_music_id:
             existing = await conn.fetchrow(
                 """
                 SELECT id FROM consumed_songs
-                WHERE apple_music_id = $1 AND day = $2
+                WHERE apple_music_id = $1
+                  AND played_at BETWEEN $2 AND $3
+                LIMIT 1
                 """,
                 apple_music_id,
-                date.fromisoformat(day)
+                played_at - timedelta(minutes=10),
+                played_at + timedelta(minutes=10)
             )
         else:
             existing = await conn.fetchrow(
@@ -253,4 +259,115 @@ async def get_all_events_with_media() -> List[Dict[str, Any]]:
             })
 
     return list(events_dict.values())
+
+
+async def get_last_api_song_ids() -> Optional[List[str]]:
+    """
+    Get the list of song IDs from the last successful sync.
+    Used to compare with current API response to detect changes.
+
+    Returns:
+        List of song IDs from last sync, or None if no previous sync
+    """
+    pool = await get_db_connection()
+
+    async with pool.acquire() as conn:
+        row = await conn.fetchrow(
+            """
+            SELECT api_song_ids
+            FROM apple_music_sync_log
+            WHERE status = 'success' AND api_song_ids IS NOT NULL
+            ORDER BY synced_at DESC
+            LIMIT 1
+            """
+        )
+
+        if not row or not row["api_song_ids"]:
+            return None
+
+        return row["api_song_ids"]  # JSONB is automatically parsed to list
+
+
+async def get_last_sync_info() -> Optional[Dict[str, Any]]:
+    """
+    Get the most recent successful Apple Music sync information.
+
+    Returns:
+        Dictionary with sync info or None if no syncs found
+    """
+    pool = await get_db_connection()
+
+    async with pool.acquire() as conn:
+        row = await conn.fetchrow(
+            """
+            SELECT
+                id,
+                synced_at,
+                songs_fetched,
+                songs_added,
+                latest_song_id,
+                api_song_ids
+            FROM apple_music_sync_log
+            WHERE status = 'success'
+            ORDER BY synced_at DESC
+            LIMIT 1
+            """
+        )
+
+        if not row:
+            return None
+
+        return {
+            "id": str(row["id"]),
+            "synced_at": row["synced_at"],
+            "songs_fetched": row["songs_fetched"],
+            "songs_added": row["songs_added"],
+            "latest_song_id": row["latest_song_id"],
+            "api_song_ids": row["api_song_ids"] if row["api_song_ids"] else []
+        }
+
+
+async def create_sync_log(
+    songs_fetched: int,
+    songs_added: int,
+    latest_song_id: Optional[str] = None,
+    api_song_ids: Optional[List[str]] = None,
+    status: str = "success",
+    error_message: Optional[str] = None
+) -> uuid.UUID:
+    """
+    Create a sync log entry.
+
+    Args:
+        songs_fetched: Number of songs returned by API
+        songs_added: Number of new songs added to database
+        latest_song_id: ID of the most recent song (for tracking)
+        api_song_ids: List of all song IDs from API response (for comparison)
+        status: 'success' or 'error'
+        error_message: Error details if status is 'error'
+
+    Returns:
+        UUID of the created log entry
+    """
+    sync_id = uuid.uuid4()
+    pool = await get_db_connection()
+
+    async with pool.acquire() as conn:
+        await conn.execute(
+            """
+            INSERT INTO apple_music_sync_log (
+                id, songs_fetched, songs_added, latest_song_id, api_song_ids, status, error_message
+            )
+            VALUES ($1, $2, $3, $4, $5::jsonb, $6, $7)
+            """,
+            sync_id,
+            songs_fetched,
+            songs_added,
+            latest_song_id,
+            json.dumps(api_song_ids) if api_song_ids else None,
+            status,
+            error_message
+        )
+
+    return sync_id
 
