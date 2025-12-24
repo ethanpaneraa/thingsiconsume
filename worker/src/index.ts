@@ -18,7 +18,12 @@ export default {
     }
 
     if (!url.pathname.startsWith("/images/")) {
-      return new Response("Not found", { status: 404 });
+      return new Response("Not found", {
+        status: 404,
+        headers: {
+          "Access-Control-Allow-Origin": "*",
+        },
+      });
     }
 
     const key = url.pathname.slice(1);
@@ -28,7 +33,12 @@ export default {
       const obj = await env.R2_BUCKET.get(key);
       if (!obj) {
         console.log("R2 object not found for key:", key);
-        return new Response("Not found", { status: 404 });
+        return new Response("Not found", {
+          status: 404,
+          headers: {
+            "Access-Control-Allow-Origin": "*",
+          },
+        });
       }
 
       const headers = new Headers();
@@ -44,7 +54,12 @@ export default {
       return new Response(obj.body, { headers });
     } catch (error) {
       console.error("Error fetching from R2:", error);
-      return new Response("Internal server error", { status: 500 });
+      return new Response("Internal server error", {
+        status: 500,
+        headers: {
+          "Access-Control-Allow-Origin": "*",
+        },
+      });
     }
   },
 };

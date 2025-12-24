@@ -120,6 +120,10 @@ async def create_song(
     song_id = uuid.uuid4()
     pool = await get_db_connection()
 
+    release_date_obj = None
+    if release_date:
+        release_date_obj = date.fromisoformat(release_date)
+
     async with pool.acquire() as conn:
         # Check if song already exists (by played_at, title, artist to avoid duplicates)
         existing = await conn.fetchrow(
@@ -154,7 +158,7 @@ async def create_song(
             apple_music_id,
             isrc,
             duration_ms,
-            release_date,
+            release_date_obj,
             apple_music_url,
             artwork_url,
             json.dumps(payload)
