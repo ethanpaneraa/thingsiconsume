@@ -179,3 +179,4 @@ async def create_event_with_image(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error creating event with image: {str(e)}")
 
+
