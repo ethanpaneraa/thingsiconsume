@@ -94,6 +94,90 @@ async def create_media(
     return media_id
 
 
+async def create_song(
+    played_at: datetime,
+    day: str,
+    title: str,
+    artist: str,
+    album: Optional[str] = None,
+    apple_music_id: Optional[str] = None,
+    isrc: Optional[str] = None,
+    duration_ms: Optional[int] = None,
+    release_date: Optional[str] = None,
+    apple_music_url: Optional[str] = None,
+    artwork_url: Optional[str] = None,
+    payload: Dict[str, Any] = None
+) -> Tuple[uuid.UUID, bool]:
+    """
+    Create a song record in the database.
+
+    Returns:
+        Tuple of (song_id, was_inserted) where was_inserted is True if new, False if duplicate
+    """
+    if payload is None:
+        payload = {}
+
+    song_id = uuid.uuid4()
+    pool = await get_db_connection()
+
+    async with pool.acquire() as conn:
+        # Check if song already exists (by played_at, title, artist to avoid duplicates)
+        existing = await conn.fetchrow(
+            """
+            SELECT id FROM consumed_songs
+            WHERE played_at = $1 AND title = $2 AND artist = $3
+            """,
+            played_at,
+            title,
+            artist
+        )
+
+        if existing:
+            return existing["id"], False
+
+        # Insert new song
+        await conn.execute(
+            """
+            INSERT INTO consumed_songs (
+                id, played_at, day, title, artist, album,
+                apple_music_id, isrc, duration_ms, release_date,
+                apple_music_url, artwork_url, payload
+            )
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13::jsonb)
+            """,
+            song_id,
+            played_at,
+            date.fromisoformat(day),
+            title,
+            artist,
+            album,
+            apple_music_id,
+            isrc,
+            duration_ms,
+            release_date,
+            apple_music_url,
+            artwork_url,
+            json.dumps(payload)
+        )
+
+        return song_id, True
+
+
+async def get_latest_song_timestamp() -> Optional[datetime]:
+    """Get the timestamp of the most recently played song."""
+    pool = await get_db_connection()
+
+    async with pool.acquire() as conn:
+        row = await conn.fetchrow(
+            """
+            SELECT MAX(played_at) as latest_played_at
+            FROM consumed_songs
+            """
+        )
+
+        return row["latest_played_at"] if row else None
+
+
 async def close_pool():
     """Close the database connection pool."""
     global _pool
