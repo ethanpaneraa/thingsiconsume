@@ -161,13 +161,13 @@ def render_html(days):
     parts.append("<head>")
     parts.append('    <meta charset="UTF-8">')
     parts.append('    <meta name="viewport" content="width=device-width, initial-scale=1.0">')
-    parts.append("    <title>consumed</title>")
+    parts.append("    <title>thing that i consumed</title>")
     parts.append('    <link rel="stylesheet" href="assets/site.css">')
     parts.append("</head>")
     parts.append("<body>")
     parts.append('    <div class="center">')
     parts.append('        <h1 class="title">consumed</h1>')
-    parts.append('        <p class="subtitle">a daily digest of the food (+ media) that make up my diet :0)</p>')
+    parts.append('        <p class="subtitle">a daily index of the things that i consume</p>')
 
     for idx, day_group in enumerate(days):
         day_label = format_day_label(day_group["day"])
@@ -178,7 +178,8 @@ def render_html(days):
             "physical": [],
             "audio": [],
             "video": [],
-            "text": []
+            "text": [],
+            "places": []
         }
 
         for event in day_group["events"]:
@@ -189,6 +190,8 @@ def render_html(days):
                 categories["audio"].append(event)
             elif etype == "video":
                 categories["video"].append(event)
+            elif etype == "place":
+                categories["places"].append(event)
             else:
                 categories["text"].append(event)
 
@@ -203,7 +206,7 @@ def render_html(days):
                 etype = event["type"]
                 title = escape(event["title"]).lower()
                 url = event["url"]
-                payload = event["payload"] or {}
+                payload = event["payload"] if isinstance(event["payload"], dict) else {}
 
                 if etype in ["meal", "photo"] and event["media"]:
                     for media in event["media"]:
@@ -238,10 +241,17 @@ def render_html(days):
 
                 elif etype == "place":
                     address = escape(str(payload.get("address", ""))).lower()
-                    if address:
-                        parts.append(f'                {title} - {address}<br>')
+                    if url:
+                        safe_url = escape(url)
+                        if address:
+                            parts.append(f'                <a href="{safe_url}">{title}</a> - {address}<br>')
+                        else:
+                            parts.append(f'                <a href="{safe_url}">{title}</a><br>')
                     else:
-                        parts.append(f'                {title}<br>')
+                        if address:
+                            parts.append(f'                {title} - {address}<br>')
+                        else:
+                            parts.append(f'                {title}<br>')
 
                 elif etype == "note":
                     text = escape(str(payload.get("text", ""))).lower()
