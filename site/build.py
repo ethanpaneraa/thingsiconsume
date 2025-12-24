@@ -228,28 +228,12 @@ def render_html(days):
                     parts.append("                    </p>")
 
             elif etype == "music":
-                # Show artwork if available
-                artwork_url = payload.get("artwork_url")
-                if artwork_url:
-                    parts.append('                    <div class="event-media">')
-                    safe_artwork = escape(str(artwork_url))
-                    parts.append(f'                        <img src="{safe_artwork}" alt="{title}" loading="lazy" width="200" height="200">')
-                    parts.append("                    </div>")
-                
-                parts.append(f'                    <h3 class="event-title">{title}</h3>')
-                artist = payload.get("artist")
+                artist = payload.get("artist", "")
                 if artist:
-                    parts.append(f'                    <p class="event-artist">by {escape(str(artist))}</p>')
-                album = payload.get("album")
-                if album:
-                    parts.append(f'                    <p class="event-album">{escape(str(album))}</p>')
-                if url:
-                    safe_url = escape(url)
-                    parts.append("                    <p class=\"event-url\">")
-                    parts.append(
-                        f'                        <a href="{safe_url}" target="_blank" rel="noopener noreferrer">Listen on Apple Music</a>'
-                    )
-                    parts.append("                    </p>")
+                    display_title = f"{title} - {escape(str(artist))}"
+                else:
+                    display_title = title
+                parts.append(f'                    <h3 class="event-title">{display_title}</h3>')
 
             elif etype == "place":
                 parts.append(f'                    <h3 class="event-title">{title}</h3>')
@@ -294,11 +278,11 @@ async def main():
     print("Fetching events from database...")
     events = await fetch_events()
     print(f"Found {len(events)} events")
-    
+
     print("Fetching songs from database...")
     songs = await fetch_songs()
     print(f"Found {len(songs)} songs")
-    
+
     # Combine events and songs
     all_items = events + songs
     print(f"Total items: {len(all_items)}")
