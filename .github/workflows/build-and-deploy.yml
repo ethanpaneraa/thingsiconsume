@@ -36,8 +36,8 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install asyncpg python-dotenv pytz
+          pip install -r site/requirements.txt
+          pip install asyncpg python-dotenv pytz requests
 
       - name: Sync Apple Music data
         env:
@@ -46,7 +46,7 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           POSTGRES_URL: ${{ secrets.POSTGRES_URL }}
         run: |
-          python sync_apple_music.py
+          python scripts/sync_apple_music.py
         continue-on-error: true
 
       - name: Build static site
