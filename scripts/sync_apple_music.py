@@ -4,7 +4,7 @@ from pathlib import Path
 from datetime import datetime, timedelta
 import os
 
-sys.path.insert(0, str(Path(__file__).parent / "ingest"))
+sys.path.insert(0, str(Path(__file__).parent.parent / "ingest"))
 
 from dotenv import load_dotenv
 from app.apple_music import AppleMusicClient
