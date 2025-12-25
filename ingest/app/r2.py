@@ -8,7 +8,6 @@ _s3_client: Optional[boto3.client] = None
 
 
 def get_s3_client():
-    """Get or create S3 client for R2."""
     global _s3_client
     if _s3_client is None:
         endpoint_url = os.getenv("R2_ENDPOINT_URL")
@@ -30,14 +29,6 @@ def get_s3_client():
 
 
 def upload_to_r2(key: str, data: bytes, content_type: str) -> None:
-    """
-    Upload data to R2 bucket.
-
-    Args:
-        key: R2 object key (path)
-        data: Bytes to upload
-        content_type: Content-Type header value
-    """
     bucket_name = os.getenv("R2_BUCKET_NAME")
     if not bucket_name:
         raise ValueError("R2_BUCKET_NAME environment variable not set")

@@ -1,9 +1,5 @@
-// Options/Settings page script for What I Consumed extension
-
-// Get browser API (works for both Chrome and Firefox)
 const browser = window.browser || window.chrome;
 
-// DOM elements
 let settingsForm;
 let statusMessage;
 let apiUrlInput;
@@ -12,9 +8,7 @@ let saveBtn;
 let testConnectionBtn;
 let toggleKeyVisibilityBtn;
 
-// Initialize when DOM is loaded
 document.addEventListener("DOMContentLoaded", async () => {
-  // Get DOM elements
   settingsForm = document.getElementById("settings-form");
   statusMessage = document.getElementById("status-message");
   apiUrlInput = document.getElementById("api-url");
@@ -23,33 +17,25 @@ document.addEventListener("DOMContentLoaded", async () => {
   testConnectionBtn = document.getElementById("test-connection-btn");
   toggleKeyVisibilityBtn = document.getElementById("toggle-key-visibility");
 
-  // Load saved settings
   await loadSettings();
 
-  // Event listeners
   settingsForm.addEventListener("submit", handleSave);
   testConnectionBtn.addEventListener("click", handleTestConnection);
   toggleKeyVisibilityBtn.addEventListener("click", toggleKeyVisibility);
 });
 
-// Load settings from storage
 async function loadSettings() {
   try {
     const result = await browser.storage.sync.get(["apiKey"]);
-    console.log("Loaded settings:", result);
 
-    // API URL is hardcoded
     apiUrlInput.value = "https://thingsiconsume-production.up.railway.app";
 
     if (result && result.apiKey) {
       apiKeyInput.value = result.apiKey;
     }
-  } catch (error) {
-    console.error("Error loading settings:", error);
-  }
+  } catch (error) {}
 }
 
-// Handle save settings
 async function handleSave(e) {
   e.preventDefault();
 
@@ -60,18 +46,14 @@ async function handleSave(e) {
     return;
   }
 
-  // Save to storage (API URL is hardcoded)
   try {
     await browser.storage.sync.set({ apiKey });
-    console.log("Settings saved successfully");
     showStatus("Settings saved successfully!", "success");
   } catch (error) {
-    console.error("Error saving settings:", error);
     showStatus("Failed to save settings: " + error.message, "error");
   }
 }
 
-// Handle test connection
 async function handleTestConnection() {
   const apiUrl = "https://thingsiconsume-production.up.railway.app";
   const apiKey = apiKeyInput.value.trim();
@@ -81,13 +63,11 @@ async function handleTestConnection() {
     return;
   }
 
-  // Disable button and show loading state
   testConnectionBtn.disabled = true;
   testConnectionBtn.textContent = "Testing...";
   showStatus("Testing connection...", "info");
 
   try {
-    // Send test request to background script
     const response = await sendMessageToBackground({
       action: "testConnection",
       config: { apiUrl, apiKey },
@@ -99,7 +79,6 @@ async function handleTestConnection() {
       showStatus(`✗ Connection failed: ${response.error}`, "error");
     }
   } catch (error) {
-    console.error("Error testing connection:", error);
     showStatus("✗ Connection test failed", "error");
   } finally {
     testConnectionBtn.disabled = false;
@@ -107,7 +86,6 @@ async function handleTestConnection() {
   }
 }
 
-// Toggle API key visibility
 function toggleKeyVisibility() {
   if (apiKeyInput.type === "password") {
     apiKeyInput.type = "text";
@@ -118,7 +96,6 @@ function toggleKeyVisibility() {
   }
 }
 
-// Send message to background script
 function sendMessageToBackground(message) {
   return new Promise((resolve) => {
     browser.runtime.sendMessage(message, (response) => {
@@ -127,13 +104,11 @@ function sendMessageToBackground(message) {
   });
 }
 
-// Show status message
 function showStatus(message, type) {
   statusMessage.textContent = message;
   statusMessage.className = `status-message ${type}`;
   statusMessage.classList.remove("hidden");
 
-  // Auto-hide success messages after 3 seconds
   if (type === "success") {
     setTimeout(() => {
       statusMessage.classList.add("hidden");

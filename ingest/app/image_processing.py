@@ -4,18 +4,7 @@ from typing import Tuple
 
 
 def convert_to_webp(image_bytes: bytes, quality: int = 90) -> Tuple[bytes, int, int]:
-    """
-    Convert image bytes to WebP format.
-
-    Args:
-        image_bytes: Original image bytes (any format)
-        quality: WebP quality (0-100), default 90
-
-    Returns:
-        Tuple of (webp_bytes, width, height)
-    """
     image = Image.open(io.BytesIO(image_bytes))
-
 
     if image.mode in ("RGBA", "LA", "P"):
         rgb_image = Image.new("RGB", image.size, (255, 255, 255))

@@ -12,26 +12,22 @@ import pytz
 
 app = FastAPI(title="Consumed API", version="1.0.0")
 
-# Timezone for day calculation
 LA_TZ = pytz.timezone("America/Los_Angeles")
 
 
 @app.on_event("startup")
 async def startup_event():
-    """Initialize database connection pool on startup."""
     from .db import get_db_connection
     await get_db_connection()
 
 
 @app.on_event("shutdown")
 async def shutdown_event():
-    """Close database connection pool on shutdown."""
     from .db import close_pool
     await close_pool()
 
 
 def verify_api_key(x_api_key: Optional[str] = Header(None)) -> str:
-    """Verify API key from header."""
     expected_key = os.getenv("INGEST_API_KEY")
     if not expected_key:
         raise HTTPException(status_code=500, detail="API key not configured")
@@ -41,7 +37,6 @@ def verify_api_key(x_api_key: Optional[str] = Header(None)) -> str:
 
 
 def derive_day(occurred_at: datetime) -> str:
-    """Convert occurred_at to America/Los_Angeles timezone and extract day."""
     if occurred_at.tzinfo is None:
         occurred_at = pytz.utc.localize(occurred_at)
 
@@ -51,7 +46,6 @@ def derive_day(occurred_at: datetime) -> str:
 
 @app.get("/health")
 async def health():
-    """Health check endpoint."""
     return {"status": "ok"}
 
 
@@ -60,18 +54,6 @@ async def create_event_endpoint(
     event_data: dict,
     api_key: str = Depends(verify_api_key)
 ):
-    """
-    Create a non-media event (link, video, music, place, note).
-
-    Request body:
-    {
-        "occurred_at": "2025-12-22T16:10:00-08:00",
-        "type": "link",
-        "title": "Postgres JSONB indexing tips",
-        "url": "https://example.com/post",
-        "payload": {}
-    }
-    """
     try:
         occurred_at_str = event_data.get("occurred_at")
         if not occurred_at_str:
@@ -108,13 +90,6 @@ async def create_event_with_image(
     file: UploadFile = File(...),
     api_key: str = Depends(verify_api_key)
 ):
-    """
-    Create a media event and upload image.
-
-    Multipart form:
-    - metadata: JSON string with event data
-    - file: binary image file
-    """
     try:
         event_data = json.loads(metadata)
 

@@ -20,7 +20,6 @@ image_base_url = os.getenv("IMAGE_BASE_URL", "").rstrip("/")
 
 
 async def fetch_events():
-    """Fetch all events with media from database."""
     conn = await asyncpg.connect(database_url)
 
     try:
@@ -76,7 +75,6 @@ async def fetch_events():
 
 
 async def fetch_songs():
-    """Fetch all songs from database."""
     conn = await asyncpg.connect(database_url)
 
     try:
@@ -122,7 +120,6 @@ async def fetch_songs():
 
 
 def group_events_by_day(events):
-    """Group events by day."""
     day_groups = defaultdict(list)
 
     for event in events:
@@ -138,7 +135,6 @@ def group_events_by_day(events):
 
 
 def format_day_label(day_str):
-    """Format day string like 'tuesday, november 18th'."""
     try:
         dt = datetime.strptime(day_str, "%Y-%m-%d")
         day_name = dt.strftime("%A").lower()
@@ -154,7 +150,6 @@ def format_day_label(day_str):
 
 
 def render_html(days):
-    """Render full HTML page as a string (no templates)."""
     parts = []
     parts.append("<!DOCTYPE html>")
     parts.append('<html lang="en">')
@@ -284,8 +279,6 @@ def render_html(days):
 
 
 async def main():
-    """Main build function."""
-    # Fetch events and songs
     print("Fetching events from database...")
     events = await fetch_events()
     print(f"Found {len(events)} events")

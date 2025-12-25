@@ -6,10 +6,7 @@ import pytz
 
 
 class AppleMusicClient:
-    """Client for interacting with Apple Music API."""
-
     def __init__(self):
-        """Initialize the Apple Music client with required tokens."""
         self.developer_token = os.getenv("APPLE_DEVELOPER_TOKEN")
         self.user_token = os.getenv("APPLE_MUSIC_USER_TOKEN")
 
@@ -25,16 +22,6 @@ class AppleMusicClient:
         }
 
     def get_recently_played(self, limit: int = 30) -> List[Dict]:
-        """
-        Fetch recently played songs from Apple Music.
-
-        Args:
-            limit: Maximum number of songs to fetch (default: 30)
-
-        Returns:
-            List of song dictionaries with standardized fields.
-            Songs are ordered from newest (position 0) to oldest.
-        """
         url = f"{self.base_url}/me/recent/played/tracks"
         params = {"limit": limit}
 
@@ -59,16 +46,6 @@ class AppleMusicClient:
             raise
 
     def _parse_song(self, item: Dict, position: int) -> Optional[Dict]:
-        """
-        Parse a song item from Apple Music API response.
-
-        Args:
-            item: Raw song data from API
-            position: Position in API response (0 = most recent)
-
-        Returns:
-            Standardized song dictionary or None if parsing fails
-        """
         try:
             attributes = item.get("attributes", {})
 

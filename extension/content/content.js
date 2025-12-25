@@ -1,10 +1,5 @@
-// Content script for What I Consumed extension
-// Runs on all pages to extract page information
-
-// Get browser API (works for both Chrome and Firefox)
 const browser = window.browser || window.chrome;
 
-// Listen for messages from popup
 browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === "getPageInfo") {
     const pageInfo = getPageInfo();
@@ -13,7 +8,6 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 });
 
-// Extract page information
 function getPageInfo() {
   const info = {
     url: window.location.href,
@@ -23,7 +17,6 @@ function getPageInfo() {
     videoUrl: null,
   };
 
-  // Detect if this is a video page
   const videoDetection = detectVideoPage();
   if (videoDetection.isVideo) {
     info.isVideo = true;
@@ -34,7 +27,6 @@ function getPageInfo() {
   return info;
 }
 
-// Detect if current page is a video page
 function detectVideoPage() {
   const result = {
     isVideo: false,
@@ -45,11 +37,9 @@ function detectVideoPage() {
   const hostname = window.location.hostname;
   const url = window.location.href;
 
-  // YouTube detection
   if (hostname.includes("youtube.com") || hostname.includes("youtu.be")) {
     result.isVideo = true;
 
-    // Try to get video title from various sources
     const h1Title = document.querySelector(
       "h1.ytd-video-primary-info-renderer"
     );
@@ -65,10 +55,7 @@ function detectVideoPage() {
     }
 
     result.url = url;
-  }
-
-  // Vimeo detection
-  else if (hostname.includes("vimeo.com")) {
+  } else if (hostname.includes("vimeo.com")) {
     result.isVideo = true;
 
     const vimeoTitle = document.querySelector("h1.title");
@@ -81,10 +68,7 @@ function detectVideoPage() {
     }
 
     result.url = url;
-  }
-
-  // Twitch detection
-  else if (hostname.includes("twitch.tv")) {
+  } else if (hostname.includes("twitch.tv")) {
     result.isVideo = true;
 
     const twitchTitle = document.querySelector(
@@ -99,10 +83,7 @@ function detectVideoPage() {
     }
 
     result.url = url;
-  }
-
-  // Netflix detection
-  else if (hostname.includes("netflix.com")) {
+  } else if (hostname.includes("netflix.com")) {
     result.isVideo = true;
 
     const netflixTitle = document.querySelector(".video-title");
@@ -115,10 +96,7 @@ function detectVideoPage() {
     }
 
     result.url = url;
-  }
-
-  // Generic video detection - check for video tags or common video players
-  else {
+  } else {
     const hasVideoTag = document.querySelector("video");
     const hasVideoPlayer = document.querySelector(
       '[class*="video-player"], [id*="video-player"], [class*="player"], [id*="player"]'
@@ -127,7 +105,6 @@ function detectVideoPage() {
     if (hasVideoTag || hasVideoPlayer) {
       result.isVideo = true;
 
-      // Try to get title from meta tags
       const ogTitle = document.querySelector('meta[property="og:title"]');
       const twitterTitle = document.querySelector('meta[name="twitter:title"]');
 
@@ -143,6 +120,3 @@ function detectVideoPage() {
 
   return result;
 }
-
-// Log that content script is loaded (for debugging)
-console.log("What I Consumed content script loaded");
