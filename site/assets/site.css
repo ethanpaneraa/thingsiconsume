@@ -1,6 +1,10 @@
 :root {
-  --color-background: whitesmoke;
-  --color-gray-01: rgba(245, 245, 245, 0.6);
+  --color-background: #111;
+  --color-foreground: #d1d5db;
+  --color-white: #ffffff;
+  --color-accent: #ff6b35;
+  --color-border: #525252;
+  --color-gray-01: rgba(17, 17, 17, 0.8);
 }
 
 * {
@@ -14,13 +18,15 @@
 }
 
 body {
-  background-color: whitesmoke;
+  background-color: var(--color-background);
+  color: var(--color-foreground);
   font-family: monospace;
   text-align: center;
 }
 
 ::selection {
-  color: orange;
+  background-color: var(--color-accent);
+  color: var(--color-background);
 }
 
 .center {
@@ -34,64 +40,108 @@ img {
   max-height: 20vh;
   min-height: 20vh;
   transition: 5s;
+  border: 1px solid var(--color-border);
 }
 
 img:hover {
   transform: rotate(360deg) skew(0deg, 0deg);
-  filter: drop-shadow(0px 0px 3px orange);
+  filter: drop-shadow(0px 0px 5px var(--color-accent));
+  border-color: var(--color-accent);
 }
 
 .title {
+  color: var(--color-white);
   transition: 5s;
 }
 
 .title:hover {
   transform: scale(3, 0.75);
+  color: var(--color-accent);
+}
+
+.subtitle {
+  color: var(--color-foreground);
+  font-size: 0.875rem;
 }
 
 .day {
   transition: 3s;
+  border: 1px solid var(--color-border);
+  padding: 0.5rem;
+  margin-bottom: 0.5rem;
 }
 
 .day:hover {
   margin: 0.25rem;
   transform: skew(0deg, -5deg);
+  border-color: var(--color-accent);
 }
 
 summary {
   transition: 5s;
+  color: var(--color-foreground);
 }
 
 summary:hover {
   cursor: default;
   transform: translateY(-0.25rem);
+  color: var(--color-accent);
+}
+
+.date {
+  color: var(--color-white);
+  font-weight: 600;
 }
 
 p {
   margin: 0;
   padding: 0;
+  color: var(--color-foreground);
 }
 
 a {
   white-space: normal;
   overflow-wrap: break-word;
   word-break: auto-phrase;
+  color: var(--color-foreground);
+  text-decoration: underline;
+  text-decoration-color: var(--color-accent);
+  transition: color 0.2s;
+}
+
+a:hover {
+  color: var(--color-accent);
 }
 
 details {
   transition: 3s;
+  border-left: 2px solid transparent;
+  padding-left: 0.5rem;
 }
 
 details[open] {
   margin: 0.25rem;
+  border-left-color: var(--color-accent);
+}
+
+details:hover {
+  border-left-color: var(--color-accent);
+}
+
+details summary {
+  font-weight: 600;
+  text-transform: lowercase;
+  letter-spacing: 0.05em;
 }
 
 .day[open] {
   margin: 1rem;
+  border-color: var(--color-accent);
 }
 
 .day[open] .date:hover {
-  text-shadow: 0 0 2px orange;
+  text-shadow: 0 0 2px var(--color-accent);
+  color: var(--color-accent);
 }
 
 footer {
@@ -101,13 +151,22 @@ footer {
 }
 
 footer a {
-  color: lightgrey;
+  color: var(--color-foreground);
   text-decoration: none;
+  transition: color 0.2s;
+}
+
+footer a:hover {
+  color: var(--color-accent);
 }
 
 .year {
-  color: orange;
+  color: var(--color-accent);
   margin: 1rem 0 0.5rem 0;
+  font-weight: 700;
+  border-bottom: 2px solid var(--color-accent);
+  padding-bottom: 0.25rem;
+  display: inline-block;
 }
 
 /* Grain Effect */
@@ -129,7 +188,7 @@ footer a {
   background-image: url('framer-noise.png');
   background-size: 256px;
   background-position: left top;
-  opacity: 0.03;
+  opacity: 0.05;
   will-change: transform;
 }
 
@@ -156,8 +215,8 @@ footer a {
   top: 0;
   width: 100%;
   height: 300px;
-  background: linear-gradient(to top, transparent, var(--color-gray-01));
-  mask-image: linear-gradient(to bottom, var(--color-gray-01) 20%, transparent);
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.8), transparent);
+  mask-image: linear-gradient(to bottom, black 20%, transparent);
 }
 
 /* Bottom vignette */
@@ -165,8 +224,8 @@ footer a {
   bottom: -1px;
   width: 100%;
   height: 100px;
-  background: linear-gradient(to bottom, transparent, var(--color-gray-01));
-  mask-image: linear-gradient(to top, var(--color-gray-01) 20%, transparent);
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.8), transparent);
+  mask-image: linear-gradient(to top, black 20%, transparent);
 }
 
 /* Left vignette */
@@ -175,8 +234,8 @@ footer a {
   height: 100%;
   width: 120px;
   min-width: 120px;
-  background: linear-gradient(to left, transparent, var(--color-gray-01));
-  mask-image: linear-gradient(to right, var(--color-gray-01) 20%, transparent);
+  background: linear-gradient(to right, rgba(0, 0, 0, 0.8), transparent);
+  mask-image: linear-gradient(to right, black 20%, transparent);
 }
 
 /* Right vignette */
@@ -185,8 +244,8 @@ footer a {
   height: 100%;
   width: 120px;
   min-width: 120px;
-  background: linear-gradient(to right, transparent, var(--color-gray-01));
-  mask-image: linear-gradient(to left, var(--color-gray-01) 20%, transparent);
+  background: linear-gradient(to left, rgba(0, 0, 0, 0.8), transparent);
+  mask-image: linear-gradient(to left, black 20%, transparent);
 }
 
 /* Hide left/right vignettes on mobile */
