@@ -160,6 +160,21 @@ def render_html(days):
     parts.append('    <link rel="stylesheet" href="assets/site.css">')
     parts.append("</head>")
     parts.append("<body>")
+    parts.append("")
+    parts.append("    <!-- Grain Effect -->")
+    parts.append('    <div class="grain-overlay">')
+    parts.append('        <div class="grain" id="grain"></div>')
+    parts.append("    </div>")
+    parts.append("")
+    parts.append("    <!-- Vignette Effect -->")
+    parts.append('    <div class="vignette-overlay">')
+    parts.append('        <div class="vignette-strip vignette-top"></div>')
+    parts.append('        <div class="vignette-strip vignette-top"></div>')
+    parts.append('        <div class="vignette-strip vignette-bottom"></div>')
+    parts.append('        <div class="vignette-strip vignette-left"></div>')
+    parts.append('        <div class="vignette-strip vignette-right"></div>')
+    parts.append("    </div>")
+    parts.append("")
     parts.append('    <div class="center">')
     parts.append('        <h1 class="title">consumed</h1>')
     parts.append('        <p class="subtitle">a daily index of the things that i consume</p>')
@@ -272,6 +287,25 @@ def render_html(days):
     parts.append("")
     parts.append("    <footer>")
     parts.append("    </footer>")
+    parts.append("")
+    parts.append("    <script>")
+    parts.append("        // Grain animation")
+    parts.append("        (function() {")
+    parts.append('            const grain = document.getElementById("grain");')
+    parts.append("            if (!grain) return;")
+    parts.append("")
+    parts.append('            const keyframesX = ["0%", "-5%", "-15%", "7%", "-5%", "-15%", "15%", "0%", "3%", "-10%"];')
+    parts.append('            const keyframesY = ["0%", "-10%", "5%", "-25%", "25%", "10%", "0%", "15%", "35%", "10%"];')
+    parts.append("            let i = 0;")
+    parts.append("")
+    parts.append("            setInterval(function() {")
+    parts.append("                const x = keyframesX[i % keyframesX.length];")
+    parts.append("                const y = keyframesY[i % keyframesY.length];")
+    parts.append('                grain.style.transform = "translateX(" + x + ") translateY(" + y + ")";')
+    parts.append("                i++;")
+    parts.append("            }, 50);")
+    parts.append("        })();")
+    parts.append("    </script>")
     parts.append("</body>")
     parts.append("</html>")
 
@@ -306,6 +340,14 @@ async def main():
         import shutil
         shutil.copy2(css_source, css_dest)
         print(f"Copied CSS to {css_dest}")
+
+    # Copy noise texture
+    noise_source = Path(__file__).parent / "assets" / "framer-noise.png"
+    noise_dest = assets_dir / "framer-noise.png"
+    if noise_source.exists():
+        import shutil
+        shutil.copy2(noise_source, noise_dest)
+        print(f"Copied noise texture to {noise_dest}")
 
     print("Rendering HTML...")
     html_content = render_html(days)

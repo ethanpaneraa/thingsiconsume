@@ -41,6 +41,7 @@ async def cleanup_database(cutoff_date, dry_run: bool = False):
                 WHERE day < $1
                 """,
                 cutoff_date
+
             )
             print(f"Events to delete: {events_count}")
 

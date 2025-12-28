@@ -1,3 +1,8 @@
+:root {
+  --color-background: whitesmoke;
+  --color-gray-01: rgba(245, 245, 245, 0.6);
+}
+
 * {
   padding: 0;
   margin: 0;
@@ -103,4 +108,91 @@ footer a {
 .year {
   color: orange;
   margin: 1rem 0 0.5rem 0;
+}
+
+/* Grain Effect */
+.grain-overlay {
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+.grain {
+  position: absolute;
+  inset: -200%;
+  height: 400%;
+  width: 400%;
+  background-image: url('framer-noise.png');
+  background-size: 256px;
+  background-position: left top;
+  opacity: 0.03;
+  will-change: transform;
+}
+
+/* Vignette Effect */
+.vignette-overlay {
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+.vignette-strip {
+  position: fixed;
+  z-index: 10;
+  user-select: none;
+  filter: blur(1px);
+}
+
+/* Top vignette */
+.vignette-top {
+  top: 0;
+  width: 100%;
+  height: 300px;
+  background: linear-gradient(to top, transparent, var(--color-gray-01));
+  mask-image: linear-gradient(to bottom, var(--color-gray-01) 20%, transparent);
+}
+
+/* Bottom vignette */
+.vignette-bottom {
+  bottom: -1px;
+  width: 100%;
+  height: 100px;
+  background: linear-gradient(to bottom, transparent, var(--color-gray-01));
+  mask-image: linear-gradient(to top, var(--color-gray-01) 20%, transparent);
+}
+
+/* Left vignette */
+.vignette-left {
+  left: -24px;
+  height: 100%;
+  width: 120px;
+  min-width: 120px;
+  background: linear-gradient(to left, transparent, var(--color-gray-01));
+  mask-image: linear-gradient(to right, var(--color-gray-01) 20%, transparent);
+}
+
+/* Right vignette */
+.vignette-right {
+  right: -24px;
+  height: 100%;
+  width: 120px;
+  min-width: 120px;
+  background: linear-gradient(to right, transparent, var(--color-gray-01));
+  mask-image: linear-gradient(to left, var(--color-gray-01) 20%, transparent);
+}
+
+/* Hide left/right vignettes on mobile */
+@media (max-width: 768px) {
+  .vignette-left,
+  .vignette-right {
+    display: none;
+  }
 }
