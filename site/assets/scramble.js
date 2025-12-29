@@ -134,10 +134,41 @@
     
     scrambleElements.forEach(function(element) {
       let cleanup = null;
+      let isAnimating = false;
       
       element.addEventListener('mouseenter', function() {
+        // Don't start animation if text is selected
+        const selection = window.getSelection();
+        if (selection && selection.toString().length > 0) {
+          return;
+        }
+        
         if (cleanup) cleanup();
+        isAnimating = true;
         cleanup = scrambleText(element);
+        
+        // Stop animation after it completes
+        setTimeout(function() {
+          isAnimating = false;
+        }, 2000);
+      });
+      
+      // Stop animation if user starts selecting text
+      element.addEventListener('mousedown', function() {
+        if (cleanup && isAnimating) {
+          cleanup();
+          cleanup = null;
+          isAnimating = false;
+        }
+      });
+      
+      // Prevent animation during text selection
+      element.addEventListener('selectstart', function() {
+        if (cleanup && isAnimating) {
+          cleanup();
+          cleanup = null;
+          isAnimating = false;
+        }
       });
     });
   });
