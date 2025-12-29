@@ -158,6 +158,7 @@ def render_html(days):
     parts.append('    <meta name="viewport" content="width=device-width, initial-scale=1.0">')
     parts.append("    <title>thing that i consumed</title>")
     parts.append('    <link rel="stylesheet" href="assets/site.css">')
+    parts.append('    <script src="assets/scramble.js"></script>')
     parts.append("</head>")
     parts.append("<body>")
     parts.append("")
@@ -176,8 +177,8 @@ def render_html(days):
     parts.append("    </div>")
     parts.append("")
     parts.append('    <div class="center">')
-    parts.append('        <h1 class="title">consumed</h1>')
-    parts.append('        <p class="subtitle">a daily index of the things that i consume</p>')
+    parts.append('        <h1 class="title" data-scramble>consumed</h1>')
+    parts.append('        <p class="subtitle" data-scramble>a daily index of the things that i consume</p>')
 
     for idx, day_group in enumerate(days):
         day_label = format_day_label(day_group["day"])
@@ -210,7 +211,7 @@ def render_html(days):
                 continue
 
             parts.append('            <details>')
-            parts.append(f'                <summary>{category_name}</summary>')
+            parts.append(f'                <summary data-scramble>{category_name}</summary>')
 
             for event in category_events:
                 etype = event["type"]
@@ -348,6 +349,14 @@ async def main():
         import shutil
         shutil.copy2(noise_source, noise_dest)
         print(f"Copied noise texture to {noise_dest}")
+
+    # Copy scramble.js
+    scramble_source = Path(__file__).parent / "assets" / "scramble.js"
+    scramble_dest = assets_dir / "scramble.js"
+    if scramble_source.exists():
+        import shutil
+        shutil.copy2(scramble_source, scramble_dest)
+        print(f"Copied scramble.js to {scramble_dest}")
 
     print("Rendering HTML...")
     html_content = render_html(days)

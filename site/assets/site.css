@@ -31,31 +31,51 @@ body {
 
 .center {
   min-height: 100vh;
+  max-height: 100vh;
   margin: 0 auto;
-  overflow: hidden;
-  padding: 1rem 5vw;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  max-width: 1200px;
+  width: 100%;
+  overflow-y: auto;
+  padding-top: calc(300px + 2rem);
+  padding-bottom: calc(100px + 2rem);
+  padding-left: 5vw;
+  padding-right: 5vw;
+  box-sizing: border-box;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.center::-webkit-scrollbar {
+  display: none;
+}
+
+.center > * {
+  width: 100%;
+  max-width: 800px;
 }
 
 img {
   max-height: 20vh;
   min-height: 20vh;
-  transition: 5s;
-  border: 1px solid var(--color-border);
+  border: 2px solid var(--color-accent);
+  transition: none;
 }
 
 img:hover {
-  transform: rotate(360deg) skew(0deg, 0deg);
-  filter: drop-shadow(0px 0px 5px var(--color-accent));
-  border-color: var(--color-accent);
+  /* No hover effects - completely static */
 }
 
 .title {
   color: var(--color-white);
-  transition: 5s;
+  transition: color 0.2s;
 }
 
 .title:hover {
-  transform: scale(3, 0.75);
   color: var(--color-accent);
 }
 
@@ -65,26 +85,40 @@ img:hover {
 }
 
 .day {
-  transition: 3s;
-  border: 1px solid var(--color-border);
   padding: 0.5rem;
-  margin-bottom: 0.5rem;
+  margin-bottom: 1.5rem;
 }
 
 .day:hover {
-  margin: 0.25rem;
-  transform: skew(0deg, -5deg);
-  border-color: var(--color-accent);
+  /* No hover effects */
 }
 
+/* Hide default disclosure markers */
 summary {
-  transition: 5s;
+  list-style: none;
+  transition: color 0.2s;
   color: var(--color-foreground);
+  cursor: pointer;
+}
+
+summary::-webkit-details-marker {
+  display: none;
+}
+
+summary::-moz-list-bullet {
+  display: none;
+}
+
+/* Orange block cursor marker */
+summary::before {
+  content: '█';
+  color: var(--color-accent);
+  margin-right: 0.5rem;
+  font-size: 0.85em;
+  display: inline-block;
 }
 
 summary:hover {
-  cursor: default;
-  transform: translateY(-0.25rem);
   color: var(--color-accent);
 }
 
@@ -106,6 +140,7 @@ a {
   color: var(--color-foreground);
   text-decoration: underline;
   text-decoration-color: var(--color-accent);
+  text-underline-offset: 0.3em;
   transition: color 0.2s;
 }
 
@@ -114,17 +149,25 @@ a:hover {
 }
 
 details {
-  transition: 3s;
+  transition: none;
+}
+
+/* Spacing for nested category details */
+.day details {
+  margin-bottom: 1.5rem;
+}
+
+/* Only apply orange border to day-level details, not nested category details */
+details.day {
   border-left: 2px solid transparent;
   padding-left: 0.5rem;
 }
 
-details[open] {
-  margin: 0.25rem;
+details.day[open] {
   border-left-color: var(--color-accent);
 }
 
-details:hover {
+details.day:hover {
   border-left-color: var(--color-accent);
 }
 
@@ -134,9 +177,22 @@ details summary {
   letter-spacing: 0.05em;
 }
 
+/* Blinking animation for open details */
+details[open] > summary::before {
+  animation: blink 1s step-end infinite;
+}
+
+@keyframes blink {
+  0%, 50% {
+    opacity: 1;
+  }
+  51%, 100% {
+    opacity: 0;
+  }
+}
+
 .day[open] {
-  margin: 1rem;
-  border-color: var(--color-accent);
+  margin-bottom: 1.5rem;
 }
 
 .day[open] .date:hover {
