@@ -64,6 +64,8 @@ img {
   min-height: 20vh;
   border: 2px solid var(--color-accent);
   transition: none;
+  image-orientation: from-image;
+  object-fit: contain;
 }
 
 img:hover {
