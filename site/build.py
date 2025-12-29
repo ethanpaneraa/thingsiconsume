@@ -177,7 +177,6 @@ def render_html(days):
     parts.append("    </div>")
     parts.append("")
     parts.append('    <div class="center">')
-    parts.append('        <h1 class="title" data-scramble>consumed</h1>')
     parts.append('        <p class="subtitle" data-scramble>a daily index of the things that i consume</p>')
 
     for idx, day_group in enumerate(days):
